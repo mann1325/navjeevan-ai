@@ -101,10 +101,9 @@ def startup_event() -> None:
     app.state.rule_provider = RuleProvider()
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health():
+    return {"status": "healthy"}
 
 @app.get("/", response_class=FileResponse)
 @app.get("/app", response_class=FileResponse)
