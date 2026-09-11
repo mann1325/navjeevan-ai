@@ -3,12 +3,10 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from backend.routes.chat import router as chat_router
@@ -22,8 +20,6 @@ from backend.exceptions.handlers import app_exception_handler, validation_except
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-BASE_DIR = Path(__file__).resolve().parents[1]
-FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 _rate_limit_state: dict[tuple[str, str], list[float]] = {}
 
 
@@ -88,10 +84,6 @@ async def rate_limit_middleware(request: Request, call_next):
     _rate_limit_state[key] = recent
     return await call_next(request)
 
-if (FRONTEND_DIST / "assets").is_dir():
-    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
-
-
 @app.on_event("startup")
 def startup_event() -> None:
     logger.info("Starting Navjeevan AI backend")
@@ -105,18 +97,12 @@ def startup_event() -> None:
 async def health():
     return {"status": "healthy"}
 
-@app.get("/", response_class=FileResponse)
-@app.get("/app", response_class=FileResponse)
-@app.get("/ui", response_class=FileResponse)
-@app.get("/react", response_class=FileResponse)
-def serve_ui():
-    index_file = FRONTEND_DIST / "index.html"
-    if not index_file.is_file():
-        raise HTTPException(
-            status_code=503,
-            detail="React frontend build is unavailable. Run npm run build in frontend/.",
-        )
-    return FileResponse(str(index_file))
+@app.get("/")
+@app.get("/app")
+@app.get("/ui")
+@app.get("/react")
+def service_status():
+    return {"status": "online", "service": "Navjeevan AI API"}
 
 
 

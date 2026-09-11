@@ -1,6 +1,5 @@
 import unittest
 import time
-from pathlib import Path
 from fastapi.testclient import TestClient
 from backend.main import _rate_limit_state, app, settings, startup_event
 
@@ -12,7 +11,7 @@ class TestAPIIntegration(unittest.TestCase):
     def test_health_check(self):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok"})
+        self.assertEqual(response.json(), {"status": "healthy"})
 
     def test_cors_allows_configured_local_origin_and_blocks_unknown_origin(self):
         allowed = self.client.options(
@@ -55,14 +54,13 @@ class TestAPIIntegration(unittest.TestCase):
         response = self.client.post("/chat", json={"query": ""})
         self.assertEqual(response.status_code, 422)
 
-    def test_root_serves_canonical_frontend(self):
+    def test_root_returns_api_status(self):
         response = self.client.get("/")
-        index_file = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "index.html"
-        if index_file.is_file():
-            self.assertEqual(response.status_code, 200)
-            self.assertIn("text/html", response.headers["content-type"])
-        else:
-            self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "online", "service": "Navjeevan AI API"},
+        )
 
     def test_advisory_endpoint(self):
         payload = {
